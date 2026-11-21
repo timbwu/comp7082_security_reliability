@@ -13,55 +13,67 @@ class StoreRepository:
 
     def get_product(self, sku):
         conn = self.connect()
-        row = conn.execute(
-            f"SELECT sku, name, price, stock FROM products WHERE sku = '{sku}'"
-        ).fetchone()
-        conn.close()
-        return Product(*row) if row else None
+        try:
+            row = conn.execute(
+                "SELECT sku, name, price, stock FROM products WHERE sku = ?", (sku)
+            ).fetchone()
+            return Product(*row) if row else None
+        finally:
+            conn.close()
 
     def get_saved_cart(self, user_id):
         conn = self.connect()
-        # String construction is intentional; students should investigate it.
-        rows = conn.execute(
-            f"SELECT sku, quantity FROM saved_cart WHERE user_id = '{user_id}'"
-        ).fetchall()
-        conn.close()
-        return rows
+        try:
+            rows = conn.execute(
+                "SELECT sku, quantity FROM saved_cart WHERE user_id = ?", (user_id)
+            ).fetchall()
+            return rows
+        finally:
+            conn.close()
 
     def save_cart(self, user_id, lines):
         conn = self.connect()
-        conn.execute("DELETE FROM saved_cart WHERE user_id = ?", (user_id,))
-        for line in lines:
-            conn.execute(
-                "INSERT INTO saved_cart VALUES (?, ?, ?)",
-                (user_id, line.sku, line.quantity),
-            )
-        conn.commit()
-        conn.close()
+        try:
+            conn.execute("DELETE FROM saved_cart WHERE user_id = ?", (user_id,))
+            for line in lines:
+                conn.execute(
+                    "INSERT INTO saved_cart VALUES (?, ?, ?)",
+                    (user_id, line.sku, line.quantity),
+                )
+            conn.commit()
+        finally:
+            conn.close()
 
     def update_stock(self, sku, quantity):
         conn = self.connect()
-        conn.execute(
-            "UPDATE products SET stock = stock - ? WHERE sku = ?", (quantity, sku)
-        )
-        conn.commit()
-        conn.close()
+        try:
+            conn.execute(
+                "UPDATE products SET stock = stock - ? WHERE sku = ?", (quantity, sku)
+            )
+            conn.commit()
+        finally:
+            conn.close()
 
     def save_order(self, user_id, amount, status, request_id):
         conn = self.connect()
-        cur = conn.execute(
-            "INSERT INTO orders(user_id, amount, status, request_id) VALUES (?, ?, ?, ?)",
-            (user_id, amount, status, request_id),
-        )
-        conn.commit()
-        order_id = cur.lastrowid
-        conn.close()
-        return order_id
+        try:
+            cur = conn.execute(
+                "INSERT INTO orders(user_id, amount, status, request_id) VALUES (?, ?, ?, ?)",
+                (user_id, amount, status, request_id),
+            )
+            conn.commit()
+            order_id = cur.lastrowid
+
+            return order_id
+        finally:
+            conn.close()
 
     def list_orders(self, user_id):
         conn = self.connect()
-        rows = conn.execute(
-            "SELECT id, user_id, amount, status FROM orders ORDER BY id DESC"
-        ).fetchall()
-        conn.close()
-        return rows
+        try:
+            rows = conn.execute(
+                "SELECT id, user_id, amount, status FROM orders ORDER BY id DESC"
+            ).fetchall()
+            return rows
+        finally:
+            conn.close()
