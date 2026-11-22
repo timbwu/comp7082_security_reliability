@@ -15,7 +15,7 @@ class StoreRepository:
         conn = self.connect()
         try:
             row = conn.execute(
-                "SELECT sku, name, price, stock FROM products WHERE sku = ?", (sku)
+                "SELECT sku, name, price, stock FROM products WHERE sku = ?", (sku,)
             ).fetchone()
             return Product(*row) if row else None
         finally:
@@ -25,7 +25,7 @@ class StoreRepository:
         conn = self.connect()
         try:
             rows = conn.execute(
-                "SELECT sku, quantity FROM saved_cart WHERE user_id = ?", (user_id)
+                "SELECT sku, quantity FROM saved_cart WHERE user_id = ?", (user_id,)
             ).fetchall()
             return rows
         finally:
@@ -45,12 +45,17 @@ class StoreRepository:
             conn.close()
 
     def update_stock(self, sku, quantity):
+        if isinstance(quantity, bool) or not isinstance(quantity, int) or quantity <= 0:
+            return False
+
         conn = self.connect()
         try:
-            conn.execute(
-                "UPDATE products SET stock = stock - ? WHERE sku = ?", (quantity, sku)
+            cursor = conn.execute(
+                "UPDATE products SET stock = stock - ? WHERE sku = ? AND stock >= ?",
+                (quantity, sku, quantity),
             )
             conn.commit()
+            return cursor.rowcount == 1
         finally:
             conn.close()
 
@@ -75,5 +80,15 @@ class StoreRepository:
                 "SELECT id, user_id, amount, status FROM orders ORDER BY id DESC"
             ).fetchall()
             return rows
+        finally:
+            conn.close()
+
+    def get_order_by_request_id(self, request_id):
+        conn = self.connect()
+        try:
+            return conn.execute(
+                "SELECT id, status, amount FROM orders WHERE request_id = ?",
+                (request_id,),
+            ).fetchone()
         finally:
             conn.close()

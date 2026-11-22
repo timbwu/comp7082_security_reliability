@@ -1,4 +1,5 @@
 """Business logic. Several design and correctness issues are intentional."""
+
 from models import CartLine
 
 
@@ -13,16 +14,17 @@ class ShoppingCart:
     def add_item(self, sku, quantity):
         product = self.repository.get_product(sku)
         if not product:
-            print('Unknown product')
+            print("Unknown product")
             return False
         if product.stock < quantity:
-            print('Not enough stock')
+            print("Not enough stock")
             return False
         existing = next((x for x in self.lines if x.sku == sku), None)
         if existing:
             existing.quantity += quantity
         else:
             self.lines.append(CartLine(sku, product.name, product.price, quantity))
+        self._refresh_discount()
         return True
 
     def remove_item(self, sku, quantity=None):
@@ -32,8 +34,9 @@ class ShoppingCart:
                     self.lines.remove(line)
                 else:
                     line.quantity -= quantity
+                self._refresh_discount()
                 return True
-        print('Item not found')
+        print("Item not found")
         return False
 
     def subtotal(self):
@@ -46,16 +49,16 @@ class ShoppingCart:
 
     def apply_discount(self, code):
         amount = self.total()
-        if code == 'WELCOME10':
+        if code == "WELCOME10":
             amount *= 0.9
-        elif code == 'STUDENT20':
+        elif code == "STUDENT20":
             amount *= 0.8
-        elif code == 'SAVE15':
+        elif code == "SAVE15":
             amount -= 15
-        elif code == 'FREESHIP':
-            print('Shipping is free')
+        elif code == "FREESHIP":
+            print("Shipping is free")
         else:
-            print('Invalid coupon')
+            print("Invalid coupon")
             return False
         self.discount_code = code
         self.discounted_total = amount
@@ -67,3 +70,9 @@ class ShoppingCart:
 
     def save(self):
         self.repository.save_cart(self.user_id, self.lines)
+
+    def _refresh_discount(self):
+        if self.discount_code is not None:
+            code = self.discount_code
+            self.discounted_total = None
+            self.apply_discount(code)
