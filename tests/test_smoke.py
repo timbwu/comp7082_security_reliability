@@ -49,10 +49,8 @@ def test_repository_closes_connection_when_query_raises(store, monkeypatch):
 
     connection = FailingConnection()
     monkeypatch.setattr(store, "connect", lambda: connection)
-
     with pytest.raises(sqlite3.OperationalError, match="query failed"):
         store.get_product("MOU-01")
-
     assert connection.closed
 
 
@@ -109,7 +107,16 @@ def test_checkout_rejects_blank_request_id_before_charging(store):
     service = CheckoutService(store, gateway)
     with pytest.raises(ValueError, match="request_id is required"):
         service.checkout(cart, "fake-token", "  ")
+    assert gateway.calls == []
+    assert store.list_orders("student") == []
 
+
+def test_empty_cart_checkout_does_not_charge(store):
+    cart = ShoppingCart("student", store)
+    gateway = FakePaymentGateway()
+    service = CheckoutService(store, gateway)
+    result = service.checkout(cart, "fake-token", "empty-1")
+    assert result.status == "empty"
     assert gateway.calls == []
     assert store.list_orders("student") == []
 
