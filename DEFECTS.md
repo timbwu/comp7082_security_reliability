@@ -18,7 +18,7 @@
 
 # Tests
 
-Created 12 unit tests that cover the defects and core behavior:
+Created 12 unit tests in `test_order_processing.py` that cover the defects and core behavior:
 
 - `test_repository_uses_parameterized_queries`
 - `test_repository_closes_connection_when_query_raises`
@@ -32,3 +32,9 @@ Created 12 unit tests that cover the defects and core behavior:
 - `test_checkout_does_not_print_payment_token`
 - `test_discount_is_recalculated_after_adding_item`
 - `test_discount_is_recalculated_after_removing_item`
+
+![Pytest results: 12 tests passed](screenshots/test_results.png)
+
+# Github Actions
+
+![Successful GitHub Actions run](screenshots/github_actions.png)
