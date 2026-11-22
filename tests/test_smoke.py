@@ -1,5 +1,3 @@
-"""Two simple smoke tests"""
-
 import sqlite3
 
 import pytest
@@ -58,9 +56,9 @@ def test_repository_closes_connection_when_query_raises(store, monkeypatch):
     assert connection.closed
 
 
-@pytest.mark.parametrize("quantity", [0, -1, True, 21])
 def test_update_stock_rejects_invalid_quantity(store, quantity):
-    assert store.update_stock("MOU-01", quantity) is False
+    for quantity in [0, -1, True, 21]:
+        assert store.update_stock("MOU-01", quantity) is False
 
 
 def test_declined_checkout_preserves_stock_and_cart(store):
@@ -73,13 +71,21 @@ def test_declined_checkout_preserves_stock_and_cart(store):
     assert [(line.sku, line.quantity) for line in cart.lines] == [("MOU-01", 2)]
 
 
-def test_approved_checkout_updates_stock_and_clears_cart(store):
+def test_approved_checkout_updates_stock(store):
     cart = ShoppingCart("student", store)
     cart.add_item("MOU-01", 2)
     service = CheckoutService(store, FakePaymentGateway())
     result = service.checkout(cart, "fake-token", "approved-1")
     assert result.status == "paid"
     assert store.get_product("MOU-01").stock == 18
+
+
+def test_approved_checkout_clears_cart(store):
+    cart = ShoppingCart("student", store)
+    cart.add_item("MOU-01", 2)
+    service = CheckoutService(store, FakePaymentGateway())
+    result = service.checkout(cart, "fake-token", "approved-2")
+    assert result.status == "paid"
     assert cart.lines == []
     assert store.get_saved_cart("student") == []
 
