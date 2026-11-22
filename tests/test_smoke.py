@@ -56,7 +56,7 @@ def test_repository_closes_connection_when_query_raises(store, monkeypatch):
     assert connection.closed
 
 
-def test_update_stock_rejects_invalid_quantity(store, quantity):
+def test_update_stock_rejects_invalid_quantity(store):
     for quantity in [0, -1, True, 21]:
         assert store.update_stock("MOU-01", quantity) is False
 
